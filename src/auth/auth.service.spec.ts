@@ -10,7 +10,7 @@ describe('AuthService magic link', () => {
   const jwt = new JwtService({ secret: 's3cret' });
   const usedJtis = new Set<string>();
   const usedMagicLinkModel = {
-    create: vi.fn(({ jti }: { jti: string }) => {
+    create: vi.fn(({ jti }: { jti: string; expiresAt: Date }) => {
       if (usedJtis.has(jti)) {
         return Promise.reject(Object.assign(new Error('dup'), { code: 11000 }));
       }
@@ -37,7 +37,7 @@ describe('AuthService magic link', () => {
       );
       const [record] = usedMagicLinkModel.create.mock.calls[0];
       expect(typeof record.jti).toBe('string');
-      expect((record as { expiresAt: unknown }).expiresAt).toBeInstanceOf(Date);
+      expect(record.expiresAt).toBeInstanceOf(Date);
     });
 
     it('rejects a link used a second time', async () => {
