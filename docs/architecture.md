@@ -15,7 +15,8 @@
 │  ├─ ConfigModule (global)                                           │
 │  ├─ MongooseModule.forRootAsync(MONGO_URI)                          │
 │  ├─ AuthModule ──imports──► UsersModule                             │
-│  │    GoogleStrategy ('google'), JwtStrategy ('jwt'), JwtAuthGuard  │
+│  │    GoogleStrategy ('google'), MagicLinkStrategy ('magic-link'),     │
+│  │    JwtStrategy ('jwt'), JwtAuthGuard                            │
 │  ├─ EntriesModule   (Entry model)                                   │
 │  └─ ReportsModule   (Entry model, read-only aggregations)           │
 └───────────────────────────┬─────────────────────────────────────────┘
@@ -42,6 +43,9 @@ GET /auth/google ──► Google consent ──► GET /auth/google/callback
                                          AuthService.generateToken({ sub, email })
                                          Set-Cookie access_token (httpOnly; secure+SameSite=None in prod)
                                          302 → FRONTEND_URL
+POST /auth/magic-link {email} ──► email link (15 min JWT, own secret)
+GET /auth/magic-link/callback?token= ──► MagicLinkStrategy ──► same cookie as Google
+
 GET /auth/session  (JwtAuthGuard) → { authenticated, name }
 GET /auth/me       (JwtAuthGuard) → user document
 GET /auth/logout   → clearCookie
@@ -53,7 +57,7 @@ Strategies are registered by adding them to `AuthModule.providers`. The name in 
 
 | Module    | Controller routes                                      | Owns model | Exports         |
 |-----------|--------------------------------------------------------|------------|-----------------|
-| `auth`    | `/auth/google`, `/google/callback`, `/logout`, `/session`, `/me` | none | `AuthService` |
+| `auth`    | `/auth/google`, `/google/callback`, `/magic-link`, `/magic-link/callback`, `/logout`, `/session`, `/me` | none | `AuthService` |
 | `users`   | none                                                   | `User`     | `UsersService`  |
 | `entries` | `POST/GET /entries`, `POST /entries/import`, `PATCH/DELETE /entries/:id` | `Entry` | `EntriesService` |
 | `reports` | `GET /reports/total`, `GET /reports/total-by-type`     | registers `Entry` read-only | none |

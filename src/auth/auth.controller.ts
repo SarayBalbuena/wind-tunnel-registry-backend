@@ -1,7 +1,18 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { MailService } from './mail.service';
+import { MagicLinkRequestDto } from './dto/magic-link-request.dto';
 import { UserDocument } from '../users/schemas/user.schema';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import {
@@ -16,7 +27,10 @@ const isProduction = process.env.NODE_ENV === 'production';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private mailService: MailService,
+  ) {}
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
@@ -39,6 +53,50 @@ export class AuthController {
     description: 'Sets access_token cookie and redirects to frontend.',
   })
   googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    return this.loginAndRedirect(req, res);
+  }
+
+  @Post('magic-link')
+  @HttpCode(202)
+  @ApiOperation({
+    summary: 'Request a magic login link',
+    description:
+      'Emails a single-purpose login link valid for 15 minutes. Always answers 202 so it does not reveal whether an email is registered.',
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Magic link sent if the email is valid.',
+    schema: {
+      type: 'object',
+      properties: { message: { type: 'string' } },
+    },
+  })
+  async requestMagicLink(@Body() dto: MagicLinkRequestDto) {
+    const token = this.authService.generateMagicLinkToken(dto.email);
+    await this.mailService.sendMagicLink(
+      dto.email,
+      this.authService.buildMagicLink(token),
+    );
+    return { message: 'If the email is valid, a login link has been sent.' };
+  }
+
+  @Get('magic-link/callback')
+  @UseGuards(AuthGuard('magic-link'))
+  @ApiOperation({
+    summary: 'Magic link callback',
+    description:
+      'Validates the token from the emailed link and sets the session cookie.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Sets access_token cookie and redirects to frontend.',
+  })
+  @ApiResponse({ status: 401, description: 'Invalid or expired magic link.' })
+  magicLinkRedirect(@Req() req: Request, @Res() res: Response) {
+    return this.loginAndRedirect(req, res);
+  }
+
+  private loginAndRedirect(req: Request, res: Response) {
     const user = req.user as UserDocument;
 
     const token = this.authService.generateToken(user);

@@ -6,6 +6,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { MagicLinkStrategy } from './strategies/magic-link.strategy';
+import { MailService } from './mail.service';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -22,7 +24,13 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    MailService,
+    GoogleStrategy,
+    JwtStrategy,
+    MagicLinkStrategy,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

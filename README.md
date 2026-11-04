@@ -49,6 +49,13 @@ A specialized backend to track and manage wind tunnel flight time, built with Ne
    GOOGLE_CLIENT_ID=your_google_client_id
    GOOGLE_CLIENT_SECRET=your_google_client_secret
    GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
+   MAGIC_LINK_CALLBACK_URL=http://localhost:3000/auth/magic-link/callback
+   # SMTP for magic-link emails (if SMTP_HOST is unset outside production, the link is logged instead)
+   SMTP_HOST=smtp.example.com
+   SMTP_PORT=587
+   SMTP_USER=your_smtp_user
+   SMTP_PASS=your_smtp_password
+   MAIL_FROM="Wind Tunnel <no-reply@example.com>"
    ```
 
 4. **Run the application:**

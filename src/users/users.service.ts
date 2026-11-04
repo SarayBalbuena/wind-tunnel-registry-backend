@@ -27,6 +27,20 @@ export class UsersService {
     return newUser.save();
   }
 
+  async findOrCreateByEmail(rawEmail: string): Promise<UserDocument> {
+    const email = rawEmail.trim().toLowerCase();
+
+    const user = await this.userModel.findOne({ email }).exec();
+    if (user) {
+      return user;
+    }
+
+    return new this.userModel({
+      email,
+      displayName: email.split('@')[0],
+    }).save();
+  }
+
   async findById(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).exec();
   }
