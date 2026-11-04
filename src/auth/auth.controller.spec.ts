@@ -4,6 +4,8 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { MailService } from './mail.service';
+import { UsersService } from '../users/users.service';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -11,7 +13,9 @@ describe('AuthController', () => {
     generateToken: vi.fn().mockReturnValue('jwt'),
     generateMagicLinkToken: vi.fn().mockReturnValue('mtok'),
     buildMagicLink: vi.fn().mockReturnValue('http://x/cb?token=mtok'),
+    verifyMagicLinkToken: vi.fn(),
   };
+  const usersService = { findOrCreateByEmail: vi.fn() };
   const mailService = { sendMagicLink: vi.fn() };
 
   beforeEach(async () => {
@@ -21,6 +25,7 @@ describe('AuthController', () => {
       providers: [
         { provide: AuthService, useValue: authService },
         { provide: MailService, useValue: mailService },
+        { provide: UsersService, useValue: usersService },
         { provide: ConfigService, useValue: { get: vi.fn() } },
       ],
     })
@@ -55,6 +60,44 @@ describe('AuthController', () => {
         expect.objectContaining({ httpOnly: true }),
       );
       expect(res.redirect).toHaveBeenCalled();
+    });
+  });
+
+  describe('verifyMagicLink', () => {
+    it('sets the cookie and returns the session without redirecting', async () => {
+      authService.verifyMagicLinkToken.mockResolvedValue('a@b.com');
+      usersService.findOrCreateByEmail.mockResolvedValue({
+        _id: 'u1',
+        email: 'a@b.com',
+        displayName: 'a',
+      });
+      const res = { cookie: vi.fn() };
+
+      const result = await controller.verifyMagicLink(
+        { token: 'mtok' },
+        res as any,
+      );
+
+      expect(authService.verifyMagicLinkToken).toHaveBeenCalledWith('mtok');
+      expect(usersService.findOrCreateByEmail).toHaveBeenCalledWith('a@b.com');
+      expect(res.cookie).toHaveBeenCalledWith(
+        'access_token',
+        'jwt',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(result).toEqual({ authenticated: true, name: 'a' });
+    });
+
+    it('rejects an invalid, expired or used token without setting a cookie', async () => {
+      authService.verifyMagicLinkToken.mockRejectedValue(
+        new UnauthorizedException('Invalid or expired magic link'),
+      );
+      const res = { cookie: vi.fn() };
+
+      await expect(
+        controller.verifyMagicLink({ token: 'bad' }, res as any),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(res.cookie).not.toHaveBeenCalled();
     });
   });
 });
