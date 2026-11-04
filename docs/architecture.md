@@ -43,8 +43,11 @@ GET /auth/google ──► Google consent ──► GET /auth/google/callback
                                          AuthService.generateToken({ sub, email })
                                          Set-Cookie access_token (httpOnly; secure+SameSite=None in prod)
                                          302 → FRONTEND_URL
-POST /auth/magic-link {email} ──► email link (15 min JWT, own secret)
+POST /auth/magic-link {email} ──► email link (15 min JWT, own secret, unique jti)
+     ThrottlerGuard: 3 per email / 15 min, 50 total / hour → 429
 GET /auth/magic-link/callback?token= ──► MagicLinkStrategy ──► same cookie as Google
+     jti stored in `used_magic_links` (TTL) → each link works once
+     invalid / expired / reused → MagicLinkExceptionFilter → FRONTEND_URL origin + ?error=magic_link_invalid
 
 GET /auth/session  (JwtAuthGuard) → { authenticated, name }
 GET /auth/me       (JwtAuthGuard) → user document

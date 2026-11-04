@@ -6,6 +6,7 @@ import { AppModule } from '../src/app.module';
 import { getConnectionToken, getModelToken } from '@nestjs/mongoose';
 import { Entry } from '../src/entries/schemas/entry.schema';
 import { User } from '../src/users/schemas/user.schema';
+import { UsedMagicLink } from '../src/auth/schemas/used-magic-link.schema';
 import { vi } from 'vitest';
 
 describe('AppController (e2e)', () => {
@@ -15,6 +16,7 @@ describe('AppController (e2e)', () => {
     find: vi.fn().mockReturnThis(),
     exec: vi.fn(),
     create: vi.fn(),
+    collection: { indexes: vi.fn().mockResolvedValue([]) },
   };
 
   const mockConnection = {
@@ -31,6 +33,8 @@ describe('AppController (e2e)', () => {
       .overrideProvider(getModelToken(Entry.name))
       .useValue(mockModel)
       .overrideProvider(getModelToken(User.name))
+      .useValue(mockModel)
+      .overrideProvider(getModelToken(UsedMagicLink.name))
       .useValue(mockModel)
       .compile();
 
