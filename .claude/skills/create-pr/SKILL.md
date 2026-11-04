@@ -109,8 +109,11 @@ Base it on `.github/pull_request_template.md`, trimmed the way past PRs do it:
 
 ```bash
 git push -u origin <branch>
-gh pr create --base main --title "<[TYPE] - Summary>" --body-file <tmp file in scratchpad>
+gh pr create --repo SarayBalbuena/wind-tunnel-registry-backend --base main --head <branch> \
+  --title "<[TYPE] - Summary>" --body-file <tmp file in scratchpad>
 ```
+
+- Always pass `--repo` and `--head`. The `origin` remote still points at the old `sbalbuenaSeat/...` URL, which redirects. Without these flags `gh` fails with "Head sha can't be blank … No commits between".
 
 - Open as `--draft` if the user said it's WIP or if checks were skipped.
 - Don't add reviewers, assignees or labels unless asked. Past PRs have none, and the `not merge` label is reserved for dependabot PRs.
