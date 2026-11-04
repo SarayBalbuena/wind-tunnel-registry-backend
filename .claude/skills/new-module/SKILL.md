@@ -50,7 +50,7 @@ Fix every failure before reporting done. Summarize the routes you created and an
 
 ## Rules
 
-- Do **not** copy `importEntries`'s raw-document return. Always map.
+- Always return mapped response DTOs, never raw Mongoose documents (including from `insertMany`).
 - Never take `user`/`userId` from the request body or query.
 - Use `import type { Request } from 'express'` in controllers.
 - Don't put `async` on controller methods. Return the service promise.
