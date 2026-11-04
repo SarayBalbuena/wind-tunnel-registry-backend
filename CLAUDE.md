@@ -56,7 +56,7 @@ Full detail is in `docs/conventions.md`. The short version:
 
 ## Env vars
 
-`PORT`, `MONGO_URI`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `FRONTEND_URL`, `NODE_ENV`. Never commit `.env*` files or print their values.
+`PORT`, `MONGO_URI`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `MAGIC_LINK_CALLBACK_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `FRONTEND_URL`, `NODE_ENV`. Never commit `.env*` files or print their values.
 
 ## Project skills and agents
 

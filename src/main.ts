@@ -14,6 +14,7 @@ async function bootstrap() {
       'http://localhost:5173',
       'http://localhost:3000',
       'https://substantial-rosalynd-blue-code-1a304522.koyeb.app',
+      'https://wind-tunnel-registry-frontend.vercel.app',
     ],
     credentials: true,
   });
