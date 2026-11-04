@@ -113,7 +113,7 @@ gh pr create --repo SarayBalbuena/wind-tunnel-registry-backend --base main --hea
   --title "<[TYPE] - Summary>" --body-file <tmp file in scratchpad>
 ```
 
-- Always pass `--repo` and `--head`. The `origin` remote still points at the old `sbalbuenaSeat/...` URL, which redirects. Without these flags `gh` fails with "Head sha can't be blank … No commits between".
+- Always pass `--repo` and `--head`. The repo was moved from `sbalbuenaSeat/...` to `SarayBalbuena/...`. On a clone whose `origin` still uses the old URL, `gh` fails without these flags ("Head sha can't be blank … No commits between"). The fix is `git remote set-url origin git@github.com:SarayBalbuena/wind-tunnel-registry-backend.git`.
 
 - Open as `--draft` if the user said it's WIP or if checks were skipped.
 - Don't add reviewers, assignees or labels unless asked. Past PRs have none, and the `not merge` label is reserved for dependabot PRs.
