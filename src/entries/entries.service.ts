@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Entry, EntryDocument, FlightType } from './schemas/entry.schema';
 import { CreateEntryDto } from './dto/create-entry.dto';
@@ -18,14 +18,17 @@ export class EntriesService {
     return mapEntryToResponse(entry);
   }
 
-  async importEntries(userId: string, entriesDto: CreateEntryDto[]) {
-    const entriesWithUser = entriesDto.map((entry) => ({
-      ...entry,
-      user: userId,
-    }));
+  async importEntries(
+    userId: string,
+    entriesDto: CreateEntryDto[],
+  ): Promise<EntryResponseDto[]> {
+    const user = new Types.ObjectId(userId);
+    const entriesWithUser = entriesDto.map((entry) => ({ ...entry, user }));
 
-    return await this.entryModel.insertMany(entriesWithUser);
+    const entries = await this.entryModel.insertMany(entriesWithUser);
+    return entries.map(mapEntryToResponse);
   }
+
   async findAll(
     userId: string,
     date?: string,

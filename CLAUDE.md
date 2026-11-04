@@ -50,7 +50,6 @@ Full detail is in `docs/conventions.md`. The short version:
 ## Gotchas
 
 - `Entry.user` has `select: false`, so it isn't returned by `find`. Keep it out of response DTOs.
-- `EntriesService.importEntries` currently returns raw `insertMany` docs and skips the mapper. Known inconsistency; don't copy it.
 - `JWT_SECRET` / Google creds fall back to `'secret'` / `'placeholder'` when unset. Don't add more fallbacks for secrets.
 - Cookie flags depend on `NODE_ENV === 'production'` (`secure`, `sameSite: 'none'`). The frontend origin must be in the CORS list in `main.ts`.
 - `FlightType` enum lives in `entries/schemas/entry.schema.ts` and is reused by reports DTOs.

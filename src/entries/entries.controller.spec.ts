@@ -254,7 +254,7 @@ describe('EntriesController', () => {
     });
   });
   describe('import', () => {
-    it('should import entries and inject userId into each one, but not return it', async () => {
+    it('should import entries for userId and return the service result', async () => {
       const entriesToImport = [
         {
           type: FlightType.INDIVIDUAL,
