@@ -52,6 +52,8 @@ Full detail is in `docs/conventions.md`. The short version:
 - `Entry.user` has `select: false`, so it isn't returned by `find`. Keep it out of response DTOs.
 - `JWT_SECRET` / Google creds fall back to `'secret'` / `'placeholder'` when unset. Don't add more fallbacks for secrets.
 - Cookie flags depend on `NODE_ENV === 'production'` (`secure`, `sameSite: 'none'`). The frontend origin must be in the CORS list in `main.ts`.
+- The frontend proxies `/api/*` to this backend (Vercel rewrite), so the session cookie stays first-party. `MAGIC_LINK_CALLBACK_URL` and `GOOGLE_CALLBACK_URL` must use the Vercel domain (`https://<app>.vercel.app/api/auth/{magic-link,google}/callback`), not the Koyeb URL, or the cookie is set on the Koyeb host and `/auth/session` returns 401 after login. `FRONTEND_URL` is the bare Vercel origin. The Google redirect URI must also be registered in Google Cloud Console. Emails sent before a config change keep the old link.
+- Magic link is scanner-safe: `MAGIC_LINK_CALLBACK_URL` should point at the frontend confirm page (`https://<app>.vercel.app/auth/magic-link`), which POSTs the token to `POST /auth/magic-link/verify`. The legacy `GET /auth/magic-link/callback` (login on GET, which mail scanners can consume) is kept only for the transition. Deploy order: frontend, backend, then change the variable.
 - `FlightType` enum lives in `entries/schemas/entry.schema.ts` and is reused by reports DTOs.
 
 ## Env vars

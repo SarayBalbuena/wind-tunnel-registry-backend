@@ -15,8 +15,10 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { MailService } from './mail.service';
 import { MagicLinkRequestDto } from './dto/magic-link-request.dto';
+import { MagicLinkVerifyDto } from './dto/magic-link-verify.dto';
 import { MagicLinkExceptionFilter } from './filters/magic-link-exception.filter';
 import { UserDocument } from '../users/schemas/user.schema';
+import { UsersService } from '../users/users.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import {
   ApiCookieAuth,
@@ -33,6 +35,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private mailService: MailService,
+    private usersService: UsersService,
   ) {}
 
   @Get('google')
@@ -102,9 +105,41 @@ export class AuthController {
     return this.loginAndRedirect(req, res);
   }
 
-  private loginAndRedirect(req: Request, res: Response) {
-    const user = req.user as UserDocument;
+  @Post('magic-link/verify')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Verify a magic link token',
+    description:
+      'Called by the frontend confirm page when the user clicks "Continue". Validates the single-use token, sets the session cookie and returns the session. Using POST means mail scanners that prefetch the emailed link cannot use up the token.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token accepted: sets access_token cookie.',
+    schema: {
+      type: 'object',
+      properties: {
+        authenticated: { type: 'boolean', example: true },
+        name: { type: 'string', example: 'John Doe' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid, expired or already used link.',
+  })
+  async verifyMagicLink(
+    @Body() dto: MagicLinkVerifyDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const email = await this.authService.verifyMagicLinkToken(dto.token);
+    const user = await this.usersService.findOrCreateByEmail(email);
 
+    this.setSessionCookie(res, user);
+
+    return { authenticated: true, name: user.displayName };
+  }
+
+  private setSessionCookie(res: Response, user: UserDocument) {
     const token = this.authService.generateToken(user);
 
     res.cookie('access_token', token, {
@@ -113,6 +148,10 @@ export class AuthController {
       sameSite: isProduction ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000,
     });
+  }
+
+  private loginAndRedirect(req: Request, res: Response) {
+    this.setSessionCookie(res, req.user as UserDocument);
 
     return res.redirect(process.env.FRONTEND_URL ?? '');
   }
