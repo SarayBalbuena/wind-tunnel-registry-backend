@@ -4,12 +4,15 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { isAllowedFrontendOrigin } from './utils/frontend-origin';
 import { UserDocument } from '../users/schemas/user.schema';
 import {
   UsedMagicLink,
   UsedMagicLinkDocument,
 } from './schemas/used-magic-link.schema';
 
+/** The frontend page that confirms a magic link (POST /auth/magic-link/verify). */
+const FRONTEND_CONFIRM_PATH = '/auth/magic-link';
 const MAGIC_LINK_AUDIENCE = 'magic-link';
 const MAGIC_LINK_TTL = '15m';
 const DUPLICATE_KEY_ERROR = 11000;
@@ -68,11 +71,18 @@ export class AuthService {
     return payload.email;
   }
 
-  buildMagicLink(token: string): string {
-    const base = this.configService.getOrThrow<string>(
-      'MAGIC_LINK_CALLBACK_URL',
-    );
-    const url = new URL(base);
+  /**
+   * `frontendOrigin` is the frontend that asked for the link (production, a
+   * Vercel preview or localhost). When it is on the allowlist the link opens
+   * that frontend's confirm page, so the session cookie is set on the same
+   * site the user is testing. Anything else uses MAGIC_LINK_CALLBACK_URL.
+   */
+  buildMagicLink(token: string, frontendOrigin?: unknown): string {
+    const url = isAllowedFrontendOrigin(frontendOrigin)
+      ? new URL(FRONTEND_CONFIRM_PATH, frontendOrigin)
+      : new URL(
+          this.configService.getOrThrow<string>('MAGIC_LINK_CALLBACK_URL'),
+        );
     url.searchParams.set('token', token);
     return url.toString();
   }

@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
-import { isAllowedOrigin } from './auth/utils/frontend-origin';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -11,12 +10,12 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: (
-      origin: string | undefined,
-      callback: (error: Error | null, allow?: boolean) => void,
-    ) =>
-      // No Origin header: same-origin or non-browser clients (curl, Swagger)
-      callback(null, !origin || isAllowedOrigin(origin)),
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://substantial-rosalynd-blue-code-1a304522.koyeb.app',
+      'https://wind-tunnel-registry-frontend.vercel.app',
+    ],
     credentials: true,
   });
 
