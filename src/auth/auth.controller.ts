@@ -20,9 +20,12 @@ import { MagicLinkExceptionFilter } from './filters/magic-link-exception.filter'
 import { UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { resolveLoginRedirect } from './utils/frontend-origin';
 import {
   ApiCookieAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -39,16 +42,18 @@ export class AuthController {
   ) {}
 
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuard)
   @ApiOperation({
     summary: 'Login with Google',
-    description: 'Redirects to Google for authentication.',
+    description:
+      'Redirects to Google for authentication. Optional `redirect` query: the frontend origin to return to after login (production, a Vercel preview of this project or localhost). Any other value is ignored and FRONTEND_URL is used.',
   })
+  @ApiQuery({ name: 'redirect', required: false, type: String })
   @ApiResponse({ status: 302, description: 'Redirect to Google login page.' })
   googleAuth() {}
 
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuard)
   @ApiOperation({
     summary: 'Google OAuth Callback',
     description:
@@ -153,7 +158,11 @@ export class AuthController {
   private loginAndRedirect(req: Request, res: Response) {
     this.setSessionCookie(res, req.user as UserDocument);
 
-    return res.redirect(process.env.FRONTEND_URL ?? '');
+    // Google sends our `state` back (the origin that started the login); the
+    // magic-link callback has none and falls back to FRONTEND_URL.
+    return res.redirect(
+      resolveLoginRedirect(req.query.state, process.env.FRONTEND_URL),
+    );
   }
 
   @Get('logout')
