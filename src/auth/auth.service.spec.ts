@@ -92,5 +92,25 @@ describe('AuthService magic link', () => {
         'http://localhost:3000/cb?token=abc',
       );
     });
+
+    it('opens the confirm page of an allowed preview origin', () => {
+      const preview =
+        'https://wind-tunnel-registry-frontend-git-x-blue-butterfly1.vercel.app';
+
+      expect(service.buildMagicLink('abc', preview)).toBe(
+        `${preview}/auth/magic-link?token=abc`,
+      );
+    });
+
+    it.each([
+      'https://evil.com',
+      'https://wind-tunnel-registry-frontend.vercel.app.evil.com',
+      undefined,
+      42,
+    ])('ignores an origin that is not allowed (%s)', (origin) => {
+      expect(service.buildMagicLink('abc', origin)).toBe(
+        'http://localhost:3000/cb?token=abc',
+      );
+    });
   });
 });
