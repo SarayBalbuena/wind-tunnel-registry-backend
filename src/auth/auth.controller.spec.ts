@@ -47,10 +47,42 @@ describe('AuthController', () => {
     });
   });
 
+  describe('googleAuthRedirect', () => {
+    const run = (query: Record<string, unknown>) => {
+      const res = { cookie: vi.fn(), redirect: vi.fn() };
+      const req = { user: { _id: 'u1' }, query };
+      controller.googleAuthRedirect(req as any, res as any);
+      return res;
+    };
+
+    beforeEach(() => {
+      vi.stubEnv(
+        'FRONTEND_URL',
+        'https://wind-tunnel-registry-frontend.vercel.app',
+      );
+    });
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('returns to the preview that started the login', () => {
+      const preview =
+        'https://wind-tunnel-registry-frontend-git-x-blue-butterfly1.vercel.app';
+
+      expect(run({ state: preview }).redirect).toHaveBeenCalledWith(
+        `${preview}/`,
+      );
+    });
+
+    it('ignores a state that is not an allowed origin', () => {
+      expect(run({ state: 'https://evil.com' }).redirect).toHaveBeenCalledWith(
+        'https://wind-tunnel-registry-frontend.vercel.app',
+      );
+    });
+  });
+
   describe('magicLinkRedirect', () => {
     it('sets the cookie and redirects', () => {
       const res = { cookie: vi.fn(), redirect: vi.fn() };
-      const req = { user: { _id: 'u1', email: 'a@b.com' } };
+      const req = { user: { _id: 'u1', email: 'a@b.com' }, query: {} };
 
       controller.magicLinkRedirect(req as any, res as any);
 
